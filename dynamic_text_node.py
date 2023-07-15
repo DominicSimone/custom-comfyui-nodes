@@ -1,7 +1,7 @@
 import random
 
 class DynamicText:
-    
+
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -23,7 +23,7 @@ class DynamicText:
     def find_bracket_pairs(self, string):
         stack = []
         pairs = []
-        
+
         for i, char in enumerate(string):
             if char == "<":
                 stack.append(i)
@@ -36,11 +36,12 @@ class DynamicText:
 
         if stack:
             raise ValueError("Unbalanced brackets: Opening bracket without corresponding closing bracket.")
-        
+
         return pairs
 
     def resolve_template_choices(self, string):
-        variables = {}
+        choice_vars = {}
+        position_vars = {}
         working_string = string
 
         bracket_pairs = self.find_bracket_pairs(string)
@@ -54,20 +55,34 @@ class DynamicText:
             template = working_string[start_index:end_index + 1]
 
             before_replace_length = len(working_string)
+            chosen_option = ''
+
             if template.startswith("<$"):
                 choices = template[2:-1].split("|")
                 var_name = choices[0]
-                if var_name in variables:
-                    chosen_option = variables[var_name]
+                if var_name in choice_vars:
+                    chosen_option = choice_vars[var_name]
                 else:
                     chosen_option = random.choice(choices[1:])
-                    variables[var_name] = chosen_option
-                working_string = working_string.replace(template, chosen_option, 1)
+                    choice_vars[var_name] = chosen_option
+
+            elif template.startswith("<#"):
+                choices = template[2:-1].split("|")
+                num_choices = len(choices) - 1
+                if num_choices >= 1:
+                    pos_name = choices[0]
+                    if pos_name in position_vars:
+                        chosen_position = position_vars[pos_name] % num_choices
+                    else:
+                        chosen_position = random.randrange(0, num_choices)
+                        position_vars[pos_name] = chosen_position
+                    chosen_option = choices[chosen_position + 1]
+
             else:
                 choices = template[1:-1].split("|")
                 chosen_option = random.choice(choices)
-                working_string = working_string.replace(template, chosen_option, 1)
 
+            working_string = working_string.replace(template, chosen_option, 1)
             length_diff = before_replace_length - len(working_string)
             i = i + 1
 
