@@ -25,15 +25,15 @@ class DynamicText:
         pairs = []
         
         for i, char in enumerate(string):
-            if char == "{":
+            if char == "<":
                 stack.append(i)
-            elif char == "}":
+            elif char == ">":
                 if stack:
                     start_index = stack.pop()
                     pairs.append((start_index, i))
                 else:
                     raise ValueError("Unbalanced brackets: Closing bracket without corresponding opening bracket.")
-        
+
         if stack:
             raise ValueError("Unbalanced brackets: Opening bracket without corresponding closing bracket.")
         
@@ -41,6 +41,7 @@ class DynamicText:
 
     def resolve_template_choices(self, string):
         variables = {}
+        working_string = string
 
         bracket_pairs = self.find_bracket_pairs(string)
 
@@ -50,10 +51,10 @@ class DynamicText:
             start_index = bracket_pair[0]
             end_index = bracket_pair[1]
 
-            template = string[start_index:end_index + 1]
-            
-            before_replace_length = len(string)
-            if template.startswith("{$"):
+            template = working_string[start_index:end_index + 1]
+
+            before_replace_length = len(working_string)
+            if template.startswith("<$"):
                 choices = template[2:-1].split("|")
                 var_name = choices[0]
                 if var_name in variables:
@@ -61,13 +62,13 @@ class DynamicText:
                 else:
                     chosen_option = random.choice(choices[1:])
                     variables[var_name] = chosen_option
-                string = string.replace(template, chosen_option, 1)
+                working_string = working_string.replace(template, chosen_option, 1)
             else:
                 choices = template[1:-1].split("|")
                 chosen_option = random.choice(choices)
-                string = string.replace(template, chosen_option, 1)
+                working_string = working_string.replace(template, chosen_option, 1)
 
-            length_diff = before_replace_length - len(string)
+            length_diff = before_replace_length - len(working_string)
             i = i + 1
 
             for index in range(i, len(bracket_pairs)):
@@ -76,13 +77,14 @@ class DynamicText:
                     bracket_pairs[index] = (bracket_pairs[index][0] - length_diff, bracket_pairs[index][1])
                 if bracket_pair[1] > end_index:
                     bracket_pairs[index] = (bracket_pairs[index][0], bracket_pairs[index][1] - length_diff)
-        return string
+
+        return working_string
 
 
     def execute(self, string_field, seed):
         random.seed(seed)
         modified_prompt = self.resolve_template_choices(string_field)
-        print(f"Dynamic Text output: {modified_prompt}")
+        print(f"Dynamic Text ({seed}): {modified_prompt}")
         return (modified_prompt,)
 
 NODE_CLASS_MAPPINGS = {
