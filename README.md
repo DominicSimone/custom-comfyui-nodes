@@ -5,21 +5,37 @@ Written for [ComfyUI](https://github.com/comfyanonymous/ComfyUI). See their [exa
 
 
 ### Dynamic Text Node
-Allows for more dynamic prompting using curly braces. Nesting is supported. At the moment of writing this README I realize that surrounding whitespace is never stripped, keep that in mind as it may give unexpected results when assigning to names containing whitespace.
+Allows for more dynamic prompting using angle brackets. Nesting is supported. At the moment of writing this README I realize that surrounding whitespace is never stripped, keep that in mind as it may give unexpected results when assigning to names containing whitespace.
 
 #### Unweighted choices
 The random engine is seeded by an input to this node, so you can achieve consistent choices for the same image by passing in the same seed to both this node and the KSampler node.
 ```
-{Mana|health|stamina} potion sitting on a {desk|table|bookshelf}
-->
+<Mana|health|stamina> potion sitting on a <desk|table|bookshelf>.
+-> can turn into ->
 health potion sitting on a bookshelf
+or
+stamina potion sitting on a desk
 ```
 
-#### Simple Variable
+#### Token Variable
+Remember the same token choice from one template and use it later.
 ```
-{$season|summer|winter|fall|spring} evening, indoor office with {$season} patterned wallpaper
-->
-summer evening, indoor office with summer patterned wallpaper
+In <$season|summer|winter|fall|spring>, I cover my indoor office with <$season> patterned wallpaper.
+-> can turn into ->
+In summer, I cover my indoor office with summer patterned wallpaper.
+or
+In winter, I cover my indoor office with winter patterned wallpaper.
+```
+
+#### Positional Variable
+Remember the same position that was chosen and use it later. Wraps around if the second template has fewer choices than the first.
+```
+My favorite fruit is <#name|apple|banana|coconut|dragonfruit>, so I want to try <#name|avocado|blueberry|cloudberry>.
+-> can turn into ->
+My favorite fruit is banana, so I want to try blueberry.
+or
+My favorite fruit is dragonfruit, so I want to try avocado.
+
 ```
 
 ### Install Instructions
