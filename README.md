@@ -38,5 +38,34 @@ My favorite fruit is dragonfruit, so I want to try avocado.
 
 ```
 
+#### Template from File
+Collects templates from .json files located in custom_nodes/templates. Supports use of both $ and # options
+```json
+{
+  "fruit": [
+    "oranges",
+    "bananas"
+  ],
+  "color": [
+    "red",
+    "blue"
+  ]
+}
+```
+
+```
+A bowl full of <.fruit>. Sliced <.fruit|$f> next to a whole <$f>
+-> can turn into ->
+A bowl full of oranges. Sliced banana next to a whole banana
+```
+
+#### Ignore Template
+Omit this template from the final prompt.
+```
+Open window, <!steaming pie,|an orange juice,> open blinds 
+->
+Open window, open blinds
+```
+
 ### Install Instructions
 Place in the ComfyUI/custom_nodes folder and restart the service. Node will be available in the `utils` group.
