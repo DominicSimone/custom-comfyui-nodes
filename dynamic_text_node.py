@@ -1,6 +1,7 @@
 import random
 import json
 import os
+from typing import Tuple
 
 class DynamicText:
 
@@ -21,6 +22,7 @@ class DynamicText:
     FUNCTION = "execute"
 
     CATEGORY = "utils"
+
 
     def flatten_templates(self, templates: list[dict[str, list[str]]]): 
         flat = {}
@@ -61,7 +63,7 @@ class DynamicText:
 
         return json_data
 
-    def find_bracket_pairs(self, string):
+    def find_bracket_pairs(self, string) -> list[Tuple[int, int]]:
         stack = []
         pairs = []
 
@@ -80,10 +82,18 @@ class DynamicText:
 
         return pairs
 
-    def resolve_template_choices(self, string, file_templates):
-        choice_vars = {}
-        position_vars = {}
-        working_string = string
+    def from_template(self, file_template: dict[str, list[str]], token: str) -> Tuple[int, str]:
+        if token[1:] in file_template:
+            template = file_template[token[1:]]
+            i = random.randint(0, len(template) - 1)
+            opt = template[i]
+            return (i, opt)
+        return (-1, token)
+
+    def resolve_template_choices(self, string: str, file_templates: dict[str, list[str]]):
+        choice_vars: dict[str, str] = {}
+        position_vars: dict[str, int] = {}
+        working_string: str = string
 
         bracket_pairs = self.find_bracket_pairs(string)
 
@@ -93,19 +103,19 @@ class DynamicText:
             start_index = bracket_pair[0]
             end_index = bracket_pair[1]
 
-            template = working_string[start_index:end_index + 1]
+            template: str = working_string[start_index:end_index + 1]
 
             before_replace_length = len(working_string)
-            chosen_option = ''
+            chosen_option: str = ""
 
             # Reuse the same option as a previously labeled template or pick a random option and save the label for later reference
             if template.startswith("<$"):
-                choices = template[2:-1].split("|")
-                var_name = choices[0]
+                choices: list[str] = template[2:-1].split("|")
+                var_name: str = choices[0]
                 if var_name in choice_vars:
                     chosen_option = choice_vars[var_name]
                 else:
-                    chosen_option = random.choice(choices[1:])
+                    chosen_option = self.from_template(file_templates, random.choice(choices[1:]))[1]
                     choice_vars[var_name] = chosen_option
 
             # Pick a known index or pick a random option and save the index for later reference
@@ -119,32 +129,7 @@ class DynamicText:
                     else:
                         chosen_position = random.randrange(0, num_choices)
                         position_vars[pos_name] = chosen_position
-                    chosen_option = choices[chosen_position + 1]
-
-            # Pick a random template from a file, supporting both $ and #
-            # Reads from custom_nodes/templates
-            # <.template> or <.template|$label>
-            elif template.startswith("<."):
-                config = template[2:-1].split("|")
-
-                template_name = config[0]
-                template_opt = "" if len(config) <= 1 else config[1]
-                template_content = file_templates[template_name]
-
-                choice_index = random.randrange(0, len(template_content))
-                chosen_option = template_content[choice_index]
-
-                if template_opt.startswith("$"):
-                    if template_opt[1:] in choice_vars:
-                        chosen_option = choice_vars[template_opt[1:]]
-                    else:
-                        choice_vars[template_opt[1:]] = chosen_option
-                elif template_opt.startswith("#"):
-                    if template_opt[1:] in position_vars:
-                        choice_index = position_vars[template_opt[1:]] % len(template_content)
-                        chosen_option = template_content[choice_index]
-                    else:
-                        position_vars[template_opt[1:]] = choice_index
+                    chosen_option = self.from_template(file_templates, choices[chosen_position + 1])[1]
 
             # Ignore this template
             elif template.startswith("<!"):
@@ -153,7 +138,8 @@ class DynamicText:
             # Pick a random option
             else:
                 choices = template[1:-1].split("|")
-                chosen_option = random.choice(choices)
+                chosen_option = self.from_template(file_templates, random.choice(choices))[1]
+
 
             working_string = working_string.replace(template, chosen_option, 1)
             length_diff = before_replace_length - len(working_string)
@@ -168,8 +154,9 @@ class DynamicText:
 
         return working_string
 
+
     def execute(self, string_field, seed):
-        random.seed(seed % 100000)
+        random.seed((seed % 100000) + (seed / 100000))
         templates = self.parse_json_files(os.path.join(os.getcwd(), "ComfyUI", "custom_nodes", "templates"))
         templates = self.flatten_templates(templates)
         modified_prompt = self.resolve_template_choices(string_field, templates)
