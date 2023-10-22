@@ -39,7 +39,7 @@ My favorite fruit is dragonfruit, so I want to try avocado.
 ```
 
 #### Template from File
-Collects templates from .json files located in custom_nodes/templates. Supports use of both $ and # options
+Collects templates from .json files located in custom_nodes/templates. A token like '.color' will be replaced by a random option if chosen. Does not support recursive templating.
 ```json
 {
   "fruit": [
@@ -54,7 +54,7 @@ Collects templates from .json files located in custom_nodes/templates. Supports 
 ```
 
 ```
-A bowl full of <.fruit>. Sliced <.fruit|$f> next to a whole <$f>
+A bowl full of <.fruit>. Sliced <$f|watermelon|.fruit> next to a whole <$f>
 -> can turn into ->
 A bowl full of oranges. Sliced banana next to a whole banana
 ```
